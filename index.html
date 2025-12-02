@@ -36,7 +36,7 @@
     <!-- Encabezado de la Aplicación -->
     <header class="text-center mb-8">
         <h1 class="text-3xl font-extrabold text-blue-800 tracking-tight">
-            💧 Registro de Mantención 💧
+            Mantención de la piscina
         </h1>
         <p class="text-sm text-blue-600 mt-1">
             Tu app simple para la piscina
@@ -45,7 +45,7 @@
 
     <!-- Notificación (Personalizada, reemplaza alert()) -->
     <div id="notification" class="notification-bar fixed top-0 left-0 right-0 p-3 text-center text-white font-semibold bg-green-500 opacity-0 -translate-y-full shadow-lg z-50 rounded-b-lg mx-auto w-11/12 max-w-sm" style="transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);">
-        Fecha registrada con éxito.
+        Mensaje de estado.
     </div>
     
     <!-- Contenedor Principal (Input y Botones) -->
@@ -77,7 +77,7 @@
         </h2>
 
         <!-- Indicador de Carga/Estado -->
-        <div id="loading-state" class="text-center text-gray-500 py-4 hidden">Cargando datos...</div>
+        <div id="loading-state" class="text-center text-gray-500 py-4">Cargando datos...</div>
         
         <!-- Lista de Fechas (se llena con JS) -->
         <ul id="dates-list" class="bg-white rounded-2xl shadow-xl divide-y divide-blue-100 overflow-hidden">
@@ -102,7 +102,7 @@
         <div id="reset-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50 hidden">
             <div class="bg-white p-6 rounded-xl shadow-2xl max-w-sm w-full">
                 <h3 class="text-xl font-bold text-red-600 mb-4">Confirmar Reseteo</h3>
-                <p class="text-gray-700 mb-6">¿Estás absolutamente seguro de que quieres borrar **TODOS** los registros de mantención? Esta acción es irreversible.</p>
+                <p class="text-gray-700 mb-6">¿Estás absolutamente seguro de que quieres borrar **TODOS** los registros de mantención? Esta acción es irreversible y solo afecta a este dispositivo.</p>
                 <div class="flex justify-end space-x-3">
                     <button id="cancel-reset-btn" class="px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300">Cancelar</button>
                     <button id="confirm-reset-btn" class="px-4 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 shadow-md">Sí, Borrar Todo</button>
@@ -112,45 +112,9 @@
     </footer>
 
 
-    <!-- Scripts de Firebase -->
+    <!-- Scripts de Lógica LocalStorage -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, setDoc, getDocs, query, orderBy, deleteField } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // Establecer el nivel de log de Firestore a Debug
-        setLogLevel('Debug');
         
-        // --- Variables Globales del Entorno Canvas ---
-        // (Estas variables son proporcionadas automáticamente por el entorno de ejecución)
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-pool-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-        let db;
-        let auth;
-        let userId = null;
-        let isAuthReady = false;
-
-        // --- Inicialización de Firebase ---
-        if (firebaseConfig) {
-            const app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            auth = getAuth(app);
-        } else {
-            console.error("Configuración de Firebase no encontrada.");
-        }
-
-        /**
-         * Ruta de la colección de Firestore para los registros privados del usuario.
-         * /artifacts/{appId}/users/{userId}/mantenimiento_piscina
-         */
-        const getCollectionRef = (uid) => {
-            if (!db || !uid) return null;
-            return collection(db, 'artifacts', appId, 'users', uid, 'mantenimiento_piscina');
-        };
-
         // --- Elementos del DOM ---
         const dateInput = document.getElementById('maintenance-date');
         const addDateBtn = document.getElementById('add-date-btn');
@@ -172,7 +136,9 @@
 
         /** Muestra una notificación temporal. */
         const showNotification = (message, isError = false) => {
-            notificationBar.textContent = message;
+            // Contexto "Local" es el predeterminado ahora
+            notificationBar.textContent = `${message}`; 
+            
             notificationBar.className = `notification-bar fixed top-0 left-0 right-0 p-3 text-center text-white font-semibold shadow-lg z-50 rounded-b-lg mx-auto w-11/12 max-w-sm ${isError ? 'bg-red-500' : 'bg-green-500'}`;
             
             // Animación: Deslizar hacia abajo
@@ -196,48 +162,20 @@
             return isoDate;
         };
         
-        // --- Lógica de Firestore (Cargar y Guardar Datos) ---
+        // --- Lógica de LocalStorage (Almacenamiento Local) ---
 
-        /**
-         * Escucha los cambios en la base de datos en tiempo real.
-         * Muestra la lista de fechas registradas, ordenadas de más reciente a más antigua.
-         */
-        const setupRealtimeListener = () => {
-            if (!isAuthReady || !userId || !db) {
-                loadingState.textContent = "Esperando autenticación...";
-                loadingState.classList.remove('hidden');
-                return;
-            }
-            
-            loadingState.classList.remove('hidden');
-            datesList.innerHTML = ''; // Limpiar la lista
-            noRecordsMessage.classList.add('hidden');
-
-            const collectionRef = getCollectionRef(userId);
-            if (!collectionRef) return;
-
-            // Nota: No podemos usar orderBy en el ambiente Canvas, así que ordenaremos en el cliente.
-            const q = query(collectionRef);
-
-            onSnapshot(q, (snapshot) => {
-                loadingState.classList.add('hidden');
-                const dates = [];
-                snapshot.forEach((doc) => {
-                    const data = doc.data();
-                    if (data.date) {
-                        dates.push({ id: doc.id, date: data.date });
-                    }
-                });
-                
-                // Ordenar las fechas localmente de más reciente a más antigua (descendente)
+        /** Carga las fechas desde localStorage. */
+        const loadDatesLocal = () => {
+            const data = localStorage.getItem('pool_maintenance_dates');
+            try {
+                const dates = data ? JSON.parse(data) : [];
+                // Ordenar localmente de más reciente a más antigua (descendente)
                 dates.sort((a, b) => b.date.localeCompare(a.date));
-
-                renderDates(dates);
-            }, (error) => {
-                console.error("Error al escuchar cambios en Firestore:", error);
-                loadingState.textContent = "Error al cargar los registros.";
-                showNotification("Error de conexión con la base de datos.", true);
-            });
+                return dates;
+            } catch (e) {
+                console.error("Error parsing localStorage data:", e);
+                return [];
+            }
         };
 
         /** Renderiza la lista de fechas en el DOM. */
@@ -246,19 +184,21 @@
             
             if (dates.length === 0) {
                 noRecordsMessage.classList.remove('hidden');
+                loadingState.classList.add('hidden');
                 return;
             }
             
             noRecordsMessage.classList.add('hidden');
+            loadingState.classList.add('hidden');
 
-            dates.forEach(({ date, id }) => {
+            dates.forEach(({ date, id }, index) => {
                 const li = document.createElement('li');
                 li.className = 'flex justify-between items-center p-4 hover:bg-blue-50 transition duration-100';
                 
                 const formattedDate = formatDateForDisplay(date);
                 
-                // Determinar si es la fecha más reciente
-                const isLatest = (dates.indexOf(dates.find(d => d.id === id)) === 0);
+                // Determinar si es la fecha más reciente (el primer elemento después de ordenar)
+                const isLatest = (index === 0);
                 
                 li.innerHTML = `
                     <span class="text-gray-700 text-lg flex items-center">
@@ -279,73 +219,46 @@
                 button.addEventListener('click', handleDeleteDate);
             });
         };
-        
-        /** Guarda la fecha de mantención seleccionada. */
-        const saveDate = async (date) => {
-            if (!isAuthReady || !userId) {
-                showNotification("Error: Autenticación no completa.", true);
-                return;
-            }
-            
-            // Validación simple
+
+        /** Guarda un nuevo registro en localStorage. */
+        const saveDate = (date) => {
             if (!date) {
                 showNotification("Por favor, selecciona una fecha válida.", true);
                 return;
             }
-
-            try {
-                // El campo 'date' se usa para facilitar el ordenamiento local (formato YYYY-MM-DD)
-                const docRef = await addDoc(getCollectionRef(userId), {
-                    date: date,
-                    timestamp: new Date().getTime() // Para un ordenamiento secundario si se necesitara
-                });
-                console.log("Documento escrito con ID: ", docRef.id);
-                showNotification("¡Registro de mantención guardado!");
-            } catch (e) {
-                console.error("Error al añadir documento: ", e);
-                showNotification("Error al guardar el registro. Intenta de nuevo.", true);
-            }
-        };
-        
-        /** Elimina un registro de fecha específico. */
-        const deleteDate = async (docId) => {
-            if (!isAuthReady || !userId) return;
-            try {
-                await deleteDoc(doc(getCollectionRef(userId), docId));
-                showNotification("Registro eliminado.");
-            } catch (e) {
-                console.error("Error al eliminar documento: ", e);
-                showNotification("Error al eliminar el registro.", true);
-            }
+            
+            const dates = loadDatesLocal();
+            const newRecord = { 
+                // Generar un ID único para permitir la eliminación
+                id: Math.random().toString(36).substring(2, 9) + Date.now().toString(36), 
+                date: date,
+                timestamp: new Date().getTime()
+            };
+            dates.push(newRecord); 
+            localStorage.setItem('pool_maintenance_dates', JSON.stringify(dates));
+            
+            // Recargar y renderizar la lista después de guardar (lo que incluye el ordenamiento)
+            renderDates(loadDatesLocal()); 
+            showNotification("¡Registro de mantención guardado localmente!");
         };
 
-        /** Elimina todos los registros. */
-        const resetAllDates = async () => {
-            if (!isAuthReady || !userId) return;
-            try {
-                // Obtener todos los documentos de la colección
-                const q = query(getCollectionRef(userId));
-                const snapshot = await getDocs(q);
-
-                // Borrar cada documento individualmente
-                const deletePromises = [];
-                snapshot.forEach((doc) => {
-                    deletePromises.push(deleteDoc(doc.ref));
-                });
-                
-                await Promise.all(deletePromises);
-                
-                showNotification("¡Todos los registros han sido borrados con éxito!", false);
-                // El listener onSnapshot actualizará la UI automáticamente
-            } catch (e) {
-                console.error("Error al resetear todos los documentos: ", e);
-                showNotification("Error al borrar los registros. Intenta de nuevo.", true);
-            } finally {
-                // Cerrar el modal después del intento de borrado
-                resetModal.classList.add('hidden');
-            }
+        /** Elimina un registro de localStorage. */
+        const deleteDate = (id) => {
+            let dates = loadDatesLocal();
+            dates = dates.filter(record => record.id !== id);
+            localStorage.setItem('pool_maintenance_dates', JSON.stringify(dates));
+            renderDates(dates); // Rerenderizar inmediatamente
+            showNotification("Registro eliminado localmente.");
         };
-        
+
+        /** Borra todos los registros de localStorage. */
+        const resetAllDates = () => {
+            resetModal.classList.add('hidden');
+            localStorage.removeItem('pool_maintenance_dates');
+            renderDates([]); // Rerenderizar con lista vacía
+            showNotification("¡Todos los registros locales han sido borrados con éxito!");
+        };
+
         // --- Handlers de Eventos ---
         
         const handleAddDate = () => {
@@ -374,54 +287,23 @@
             resetModal.classList.add('hidden');
         };
 
-        // --- Configuración Inicial y Autenticación ---
+        // --- Configuración Inicial ---
 
-        const initializeAppAndAuth = async () => {
-            try {
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (error) {
-                console.error("Error durante la autenticación:", error);
-                // Intentar fallback a anónimo si falla el token
-                try {
-                    await signInAnonymously(auth);
-                } catch (anonError) {
-                    console.error("Error en el fallback a autenticación anónima:", anonError);
-                }
-            }
-
-            // Escuchador de cambios de estado de autenticación (garantiza que userId esté seteado)
-            onAuthStateChanged(auth, (user) => {
-                if (user) {
-                    userId = user.uid;
-                    isAuthReady = true;
-                    // Una vez que tenemos el userId, podemos iniciar la escucha de datos
-                    setupRealtimeListener();
-                } else {
-                    userId = null;
-                    isAuthReady = false;
-                    loadingState.textContent = "Error de autenticación. Recarga la página.";
-                    loadingState.classList.remove('hidden');
-                }
-            });
+        const initializeApp = () => {
+            loadingState.textContent = "Datos cargados desde el almacenamiento local.";
             
-            // Asignar listeners después de la inicialización
+            // Cargar y mostrar los datos iniciales
+            renderDates(loadDatesLocal());
+            
+            // Asignar listeners
             addDateBtn.addEventListener('click', handleAddDate);
             resetBtn.addEventListener('click', handleResetClick);
             cancelResetBtn.addEventListener('click', handleCancelReset);
             confirmResetBtn.addEventListener('click', resetAllDates);
         };
 
-        if (firebaseConfig) {
-            initializeAppAndAuth();
-        } else {
-            loadingState.textContent = "ERROR: Configuración de la base de datos no disponible.";
-            loadingState.classList.remove('hidden');
-            showNotification("ERROR: La aplicación no puede inicializar la base de datos.", true);
-        }
+        // Iniciar la aplicación
+        initializeApp();
 
     </script>
 </body>
