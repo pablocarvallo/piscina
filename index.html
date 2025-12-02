@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <!-- Meta tag crucial para que funcione como una aplicación fullscreen en iOS (sin barra de direcciones) -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Registro de Mantenciones de Piscina</title>
+    <!-- Carga de Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Configuración de la fuente Inter -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-color: #f0f9ff; /* Azul muy claro para fondo de piscina */
+        }
+        /* Estilos personalizados para el campo de fecha y botones */
+        .input-date {
+            appearance: none;
+            cursor: pointer;
+            text-align: center;
+        }
+        /* Clase para el mensaje de notificación personalizado */
+        .notification-bar {
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-6">
+
+    <!-- Encabezado de la Aplicación -->
+    <header class="text-center mb-8">
+        <h1 class="text-3xl font-extrabold text-blue-800 tracking-tight">
+            💧 Registro de Mantención 💧
+        </h1>
+        <p class="text-sm text-blue-600 mt-1">
+            Tu app simple para la piscina
+        </p>
+    </header>
+
+    <!-- Notificación (Personalizada, reemplaza alert()) -->
+    <div id="notification" class="notification-bar fixed top-0 left-0 right-0 p-3 text-center text-white font-semibold bg-green-500 opacity-0 -translate-y-full shadow-lg z-50 rounded-b-lg mx-auto w-11/12 max-w-sm" style="transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);">
+        Fecha registrada con éxito.
+    </div>
+    
+    <!-- Contenedor Principal (Input y Botones) -->
+    <main class="max-w-md mx-auto w-full bg-white p-6 rounded-2xl shadow-xl">
+        
+        <p class="text-sm text-gray-500 mb-4 text-center">
+            Selecciona la fecha de la última mantención.
+        </p>
+        
+        <!-- Campo de Entrada de Fecha -->
+        <div class="flex flex-col space-y-4">
+            <input type="date" id="maintenance-date" 
+                   class="input-date w-full p-3 border-2 border-blue-300 rounded-xl text-lg font-medium text-blue-900 focus:border-blue-500 focus:ring-blue-500 focus:outline-none transition duration-150 ease-in-out"
+                   max=""> <!-- Máx se setea en JS a la fecha actual -->
+            
+            <!-- Botón de Registro -->
+            <button id="add-date-btn" 
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transform active:scale-95 transition duration-150 ease-in-out">
+                Registrar Mantención
+            </button>
+        </div>
+
+    </main>
+    
+    <!-- Sección de Historial de Mantenciones -->
+    <section class="mt-8 max-w-md mx-auto w-full flex-grow">
+        <h2 class="text-xl font-semibold text-blue-800 mb-4 text-center">
+            Historial de Fechas
+        </h2>
+
+        <!-- Indicador de Carga/Estado -->
+        <div id="loading-state" class="text-center text-gray-500 py-4 hidden">Cargando datos...</div>
+        
+        <!-- Lista de Fechas (se llena con JS) -->
+        <ul id="dates-list" class="bg-white rounded-2xl shadow-xl divide-y divide-blue-100 overflow-hidden">
+            <!-- Las fechas se insertarán aquí -->
+        </ul>
+        
+        <!-- Mensaje si no hay registros -->
+        <p id="no-records-message" class="text-center text-gray-500 mt-4 p-4 bg-white rounded-xl shadow-md hidden">
+            Aún no hay registros de mantención. ¡Comienza a registrar!
+        </p>
+
+    </section>
+    
+    <!-- Sección de Opciones (Resetear) -->
+    <footer class="mt-8 mb-4 max-w-md mx-auto w-full">
+        <!-- Botón de Reset -->
+        <button id="reset-btn" 
+                class="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-xl shadow-md opacity-50 hover:opacity-100 transition duration-150 ease-in-out text-sm">
+            🚨 Resetear Todos los Registros
+        </button>
+        <!-- Modal de Confirmación para Reset -->
+        <div id="reset-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50 hidden">
+            <div class="bg-white p-6 rounded-xl shadow-2xl max-w-sm w-full">
+                <h3 class="text-xl font-bold text-red-600 mb-4">Confirmar Reseteo</h3>
+                <p class="text-gray-700 mb-6">¿Estás absolutamente seguro de que quieres borrar **TODOS** los registros de mantención? Esta acción es irreversible.</p>
+                <div class="flex justify-end space-x-3">
+                    <button id="cancel-reset-btn" class="px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300">Cancelar</button>
+                    <button id="confirm-reset-btn" class="px-4 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 shadow-md">Sí, Borrar Todo</button>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+
+    <!-- Scripts de Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, setDoc, getDocs, query, orderBy, deleteField } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Establecer el nivel de log de Firestore a Debug
+        setLogLevel('Debug');
+        
+        // --- Variables Globales del Entorno Canvas ---
+        // (Estas variables son proporcionadas automáticamente por el entorno de ejecución)
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-pool-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let db;
+        let auth;
+        let userId = null;
+        let isAuthReady = false;
+
+        // --- Inicialización de Firebase ---
+        if (firebaseConfig) {
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+        } else {
+            console.error("Configuración de Firebase no encontrada.");
+        }
+
+        /**
+         * Ruta de la colección de Firestore para los registros privados del usuario.
+         * /artifacts/{appId}/users/{userId}/mantenimiento_piscina
+         */
+        const getCollectionRef = (uid) => {
+            if (!db || !uid) return null;
+            return collection(db, 'artifacts', appId, 'users', uid, 'mantenimiento_piscina');
+        };
+
+        // --- Elementos del DOM ---
+        const dateInput = document.getElementById('maintenance-date');
+        const addDateBtn = document.getElementById('add-date-btn');
+        const datesList = document.getElementById('dates-list');
+        const resetBtn = document.getElementById('reset-btn');
+        const resetModal = document.getElementById('reset-modal');
+        const confirmResetBtn = document.getElementById('confirm-reset-btn');
+        const cancelResetBtn = document.getElementById('cancel-reset-btn');
+        const loadingState = document.getElementById('loading-state');
+        const noRecordsMessage = document.getElementById('no-records-message');
+        const notificationBar = document.getElementById('notification');
+        
+        // Establecer la fecha máxima del input a hoy
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.setAttribute('max', today);
+        dateInput.value = today; // Valor por defecto
+
+        // --- Funciones de Utilidad ---
+
+        /** Muestra una notificación temporal. */
+        const showNotification = (message, isError = false) => {
+            notificationBar.textContent = message;
+            notificationBar.className = `notification-bar fixed top-0 left-0 right-0 p-3 text-center text-white font-semibold shadow-lg z-50 rounded-b-lg mx-auto w-11/12 max-w-sm ${isError ? 'bg-red-500' : 'bg-green-500'}`;
+            
+            // Animación: Deslizar hacia abajo
+            notificationBar.classList.remove('-translate-y-full');
+            notificationBar.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                // Animación: Deslizar hacia arriba
+                notificationBar.classList.remove('translate-y-0', 'opacity-100');
+                notificationBar.classList.add('-translate-y-full', 'opacity-0');
+            }, 3000);
+        };
+        
+        /** Formatea una fecha ISO (YYYY-MM-DD) a un formato legible (DD/MM/YYYY). */
+        const formatDateForDisplay = (isoDate) => {
+            if (!isoDate) return 'Fecha Inválida';
+            const parts = isoDate.split('-');
+            if (parts.length === 3) {
+                return `${parts[2]}/${parts[1]}/${parts[0]}`;
+            }
+            return isoDate;
+        };
+        
+        // --- Lógica de Firestore (Cargar y Guardar Datos) ---
+
+        /**
+         * Escucha los cambios en la base de datos en tiempo real.
+         * Muestra la lista de fechas registradas, ordenadas de más reciente a más antigua.
+         */
+        const setupRealtimeListener = () => {
+            if (!isAuthReady || !userId || !db) {
+                loadingState.textContent = "Esperando autenticación...";
+                loadingState.classList.remove('hidden');
+                return;
+            }
+            
+            loadingState.classList.remove('hidden');
+            datesList.innerHTML = ''; // Limpiar la lista
+            noRecordsMessage.classList.add('hidden');
+
+            const collectionRef = getCollectionRef(userId);
+            if (!collectionRef) return;
+
+            // Nota: No podemos usar orderBy en el ambiente Canvas, así que ordenaremos en el cliente.
+            const q = query(collectionRef);
+
+            onSnapshot(q, (snapshot) => {
+                loadingState.classList.add('hidden');
+                const dates = [];
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    if (data.date) {
+                        dates.push({ id: doc.id, date: data.date });
+                    }
+                });
+                
+                // Ordenar las fechas localmente de más reciente a más antigua (descendente)
+                dates.sort((a, b) => b.date.localeCompare(a.date));
+
+                renderDates(dates);
+            }, (error) => {
+                console.error("Error al escuchar cambios en Firestore:", error);
+                loadingState.textContent = "Error al cargar los registros.";
+                showNotification("Error de conexión con la base de datos.", true);
+            });
+        };
+
+        /** Renderiza la lista de fechas en el DOM. */
+        const renderDates = (dates) => {
+            datesList.innerHTML = '';
+            
+            if (dates.length === 0) {
+                noRecordsMessage.classList.remove('hidden');
+                return;
+            }
+            
+            noRecordsMessage.classList.add('hidden');
+
+            dates.forEach(({ date, id }) => {
+                const li = document.createElement('li');
+                li.className = 'flex justify-between items-center p-4 hover:bg-blue-50 transition duration-100';
+                
+                const formattedDate = formatDateForDisplay(date);
+                
+                // Determinar si es la fecha más reciente
+                const isLatest = (dates.indexOf(dates.find(d => d.id === id)) === 0);
+                
+                li.innerHTML = `
+                    <span class="text-gray-700 text-lg flex items-center">
+                        ${isLatest ? '<span class="text-xs font-bold text-green-600 bg-green-100 px-2 py-0.5 rounded-full mr-2">ÚLTIMA</span>' : ''}
+                        ${formattedDate}
+                    </span>
+                    <button data-id="${id}" class="delete-btn text-red-400 hover:text-red-600 p-2 rounded-full hover:bg-red-50 transition duration-150" aria-label="Eliminar registro">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                `;
+                datesList.appendChild(li);
+            });
+            
+            // Agregar listeners para los botones de eliminar después de renderizar
+            document.querySelectorAll('.delete-btn').forEach(button => {
+                button.addEventListener('click', handleDeleteDate);
+            });
+        };
+        
+        /** Guarda la fecha de mantención seleccionada. */
+        const saveDate = async (date) => {
+            if (!isAuthReady || !userId) {
+                showNotification("Error: Autenticación no completa.", true);
+                return;
+            }
+            
+            // Validación simple
+            if (!date) {
+                showNotification("Por favor, selecciona una fecha válida.", true);
+                return;
+            }
+
+            try {
+                // El campo 'date' se usa para facilitar el ordenamiento local (formato YYYY-MM-DD)
+                const docRef = await addDoc(getCollectionRef(userId), {
+                    date: date,
+                    timestamp: new Date().getTime() // Para un ordenamiento secundario si se necesitara
+                });
+                console.log("Documento escrito con ID: ", docRef.id);
+                showNotification("¡Registro de mantención guardado!");
+            } catch (e) {
+                console.error("Error al añadir documento: ", e);
+                showNotification("Error al guardar el registro. Intenta de nuevo.", true);
+            }
+        };
+        
+        /** Elimina un registro de fecha específico. */
+        const deleteDate = async (docId) => {
+            if (!isAuthReady || !userId) return;
+            try {
+                await deleteDoc(doc(getCollectionRef(userId), docId));
+                showNotification("Registro eliminado.");
+            } catch (e) {
+                console.error("Error al eliminar documento: ", e);
+                showNotification("Error al eliminar el registro.", true);
+            }
+        };
+
+        /** Elimina todos los registros. */
+        const resetAllDates = async () => {
+            if (!isAuthReady || !userId) return;
+            try {
+                // Obtener todos los documentos de la colección
+                const q = query(getCollectionRef(userId));
+                const snapshot = await getDocs(q);
+
+                // Borrar cada documento individualmente
+                const deletePromises = [];
+                snapshot.forEach((doc) => {
+                    deletePromises.push(deleteDoc(doc.ref));
+                });
+                
+                await Promise.all(deletePromises);
+                
+                showNotification("¡Todos los registros han sido borrados con éxito!", false);
+                // El listener onSnapshot actualizará la UI automáticamente
+            } catch (e) {
+                console.error("Error al resetear todos los documentos: ", e);
+                showNotification("Error al borrar los registros. Intenta de nuevo.", true);
+            } finally {
+                // Cerrar el modal después del intento de borrado
+                resetModal.classList.add('hidden');
+            }
+        };
+        
+        // --- Handlers de Eventos ---
+        
+        const handleAddDate = () => {
+            const selectedDate = dateInput.value;
+            if (selectedDate) {
+                saveDate(selectedDate);
+            } else {
+                showNotification("Debes seleccionar una fecha.", true);
+            }
+        };
+        
+        const handleDeleteDate = (event) => {
+            const docId = event.currentTarget.dataset.id;
+            if (docId) {
+                deleteDate(docId);
+            }
+        };
+
+        const handleResetClick = () => {
+            // Mostrar el modal de confirmación
+            resetModal.classList.remove('hidden');
+        };
+
+        const handleCancelReset = () => {
+            // Ocultar el modal de confirmación
+            resetModal.classList.add('hidden');
+        };
+
+        // --- Configuración Inicial y Autenticación ---
+
+        const initializeAppAndAuth = async () => {
+            try {
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Error durante la autenticación:", error);
+                // Intentar fallback a anónimo si falla el token
+                try {
+                    await signInAnonymously(auth);
+                } catch (anonError) {
+                    console.error("Error en el fallback a autenticación anónima:", anonError);
+                }
+            }
+
+            // Escuchador de cambios de estado de autenticación (garantiza que userId esté seteado)
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    userId = user.uid;
+                    isAuthReady = true;
+                    // Una vez que tenemos el userId, podemos iniciar la escucha de datos
+                    setupRealtimeListener();
+                } else {
+                    userId = null;
+                    isAuthReady = false;
+                    loadingState.textContent = "Error de autenticación. Recarga la página.";
+                    loadingState.classList.remove('hidden');
+                }
+            });
+            
+            // Asignar listeners después de la inicialización
+            addDateBtn.addEventListener('click', handleAddDate);
+            resetBtn.addEventListener('click', handleResetClick);
+            cancelResetBtn.addEventListener('click', handleCancelReset);
+            confirmResetBtn.addEventListener('click', resetAllDates);
+        };
+
+        if (firebaseConfig) {
+            initializeAppAndAuth();
+        } else {
+            loadingState.textContent = "ERROR: Configuración de la base de datos no disponible.";
+            loadingState.classList.remove('hidden');
+            showNotification("ERROR: La aplicación no puede inicializar la base de datos.", true);
+        }
+
+    </script>
+</body>
+</html>
