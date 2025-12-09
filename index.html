@@ -3,598 +3,495 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Mantenciones Piscina</title>
+    
+    <!-- Configuración PWA iOS -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Piscina">
-    <!-- Configuración del Icono para iOS (Asumiendo que el archivo se llama 'apple-touch-icon.png' y está en la misma carpeta) -->
+    
+    <!-- Configuración del Icono para iOS -->
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
     <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
     <link rel="apple-touch-icon" sizes="192x192" href="apple-touch-icon.png">
-    <title>Mantenciones Piscina</title>
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <!-- html2canvas para capturas -->
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
+    <!-- Configuración de Fuentes y Estilos iOS 18 -->
     <style>
-        /* --- Variables de Diseño iOS 18 --- */
-        :root {
-            --ios-bg: #F2F2F7; 
-            --ios-card: #FFFFFF;
-            --ios-text: #000000;
-            --ios-subtext: #8E8E93;
-            --ios-blue: #007AFF;
-            --ios-green: #34C759;
-            --ios-red: #FF3B30;
-            --ios-gray-light: #E5E5EA;
-            --radius-card: 20px;
-            --radius-btn: 14px;
-            --shadow: 0 4px 12px rgba(0,0,0,0.05);
-            --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        }
-
-        /* Modo Oscuro Automático */
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --ios-bg: #000000;
-                --ios-card: #1C1C1E;
-                --ios-text: #FFFFFF;
-                --ios-gray-light: #2C2C2E;
-                --shadow: 0 4px 12px rgba(0,0,0,0.2);
-            }
-        }
-
-        * {
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
         body {
-            font-family: var(--font-stack);
-            background-color: var(--ios-bg);
-            color: var(--ios-text);
-            margin: 0;
-            padding: 0;
-            padding-bottom: 40px;
-            overscroll-behavior-y: none; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #F2F2F7; /* iOS System Gray 6 */
+            -webkit-tap-highlight-color: transparent;
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+            user-select: none;
+            overflow-x: hidden;
         }
 
-        /* --- Encabezado --- */
-        header {
-            padding: 60px 20px 20px 20px;
-            background: var(--ios-bg);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        /* Estilo iOS 18 Glassmorphism y Sombras Suaves */
+        .ios-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 24px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
-        .header-left {
-            flex-grow: 1;
+        .ios-card:active {
+            transform: scale(0.98);
         }
 
-        h1 {
-            font-size: 34px;
-            font-weight: 700;
-            margin: 0;
-            letter-spacing: -0.5px;
-        }
-
-        .subtitle {
-            font-size: 17px;
-            color: var(--ios-subtext);
-            margin-top: 5px;
-            font-weight: 400;
-        }
-
-        .header-buttons {
-            display: flex;
-            gap: 10px;
-        }
-
-        .action-button {
-            background: var(--ios-gray-light);
-            border: none;
-            border-radius: 50%;
-            width: 44px;
-            height: 44px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: background 0.2s ease-in-out;
-        }
-        .action-button:active {
-            background: var(--ios-subtext);
-        }
-        .action-button svg {
-            stroke: var(--ios-text);
-            stroke-width: 2;
-            width: 22px;
-            height: 22px;
-        }
-
-
-        /* --- Tarjeta contenedora principal --- */
-        .card {
-            background-color: var(--ios-card);
-            border-radius: var(--radius-card);
-            margin: 0 20px;
-            box-shadow: var(--shadow);
-            overflow: hidden;
-        }
-
-        /* --- Lista de Semanas --- */
-        .week-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 16px 20px;
-            border-bottom: 1px solid var(--ios-gray-light);
-            transition: background 0.2s;
-        }
-
-        .week-row:last-child {
-            border-bottom: none;
-        }
-
-        .week-info {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .week-title {
-            font-size: 17px;
-            font-weight: 600;
-        }
-
-        .week-dates {
-            font-size: 13px;
-            color: var(--ios-subtext);
-            margin-top: 2px;
-        }
-
-        /* --- Botones de Acción (Toggle) del mes actual --- */
-        .action-group {
-            display: flex;
-            gap: 8px;
-            background: var(--ios-gray-light);
-            padding: 4px;
-            border-radius: var(--radius-btn);
-        }
-
-        .btn-action {
-            width: 44px;
-            height: 36px;
-            border: none;
-            border-radius: 10px;
-            background: transparent;
-            font-size: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
+        .ios-btn {
+            border-radius: 9999px;
             transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
-
-        .btn-action.active-check {
-            background-color: var(--ios-card);
-            color: var(--ios-green);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            transform: scale(1.05);
+        
+        .ios-btn:active {
+            opacity: 0.7;
+            transform: scale(0.95);
         }
 
-        .btn-action.active-cross {
-            background-color: var(--ios-card);
-            color: var(--ios-red);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            transform: scale(1.05);
-        }
-
-        .btn-action.inactive {
-            color: var(--ios-subtext);
-            opacity: 0.5;
-        }
-
-        /* Iconos SVG */
-        .week-row svg {
-            width: 20px;
-            height: 20px;
-            stroke-width: 3;
-            fill: none;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-
-        /* --- Estilos del Modal de Historial (Ventana Emergente iOS) --- */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            display: none; /* Oculto por defecto */
+        /* Toggle Button Logic */
+        .status-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
             justify-content: center;
-            align-items: flex-end; /* Aparece desde abajo */
-            z-index: 1000;
-            backdrop-filter: blur(5px);
-            opacity: 0;
-            transition: opacity 0.3s ease-out;
-        }
-        .modal-overlay.open {
-            display: flex;
-            opacity: 1;
+            font-size: 1.5rem;
+            border: 2px solid #E5E5EA;
+            background: white;
+            color: #8E8E93;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
-        .modal-content {
-            background-color: var(--ios-bg);
-            width: 100%;
-            max-width: 600px; /* Ancho máximo en iPad */
-            height: 80%; /* Altura en iPhone */
-            border-top-left-radius: 30px;
-            border-top-right-radius: 30px;
-            padding: 20px 0;
-            display: flex;
-            flex-direction: column;
-            transform: translateY(100%);
-            transition: transform 0.3s ease-out;
+        .status-btn.checked {
+            background-color: #34C759; /* iOS Green */
+            border-color: #34C759;
+            color: white;
+            transform: rotate(0deg);
         }
 
-        .modal-overlay.open .modal-content {
-            transform: translateY(0);
+        .status-btn.crossed {
+            background-color: #FF3B30; /* iOS Red */
+            border-color: #FF3B30;
+            color: white;
+            transform: rotate(0deg);
         }
 
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 20px 10px 20px;
-            border-bottom: 1px solid var(--ios-gray-light);
+        /* Animaciones */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animate-enter {
+            animation: fadeIn 0.4s ease-out forwards;
         }
 
-        .modal-header h2 {
-            font-size: 24px;
-            font-weight: 700;
-            margin: 0;
+        /* Tabs Navigation */
+        .tab-active {
+            color: #007AFF;
+        }
+        .tab-inactive {
+            color: #999;
         }
 
-        .modal-close-btn {
-            color: var(--ios-blue);
-            font-size: 17px;
-            font-weight: 600;
-            background: none;
-            border: none;
-            cursor: pointer;
+        /* Captura de pantalla: Ocultar elementos no deseados */
+        .capturing .no-capture {
+            display: none !important;
         }
-
-        .modal-body {
-            overflow-y: auto;
-            padding: 10px 20px;
+        .capturing {
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            background: white !important;
+            padding: 20px;
         }
-
-        /* Historial */
-        .history-month-group {
-            margin-bottom: 20px;
-            background-color: var(--ios-card);
-            border-radius: var(--radius-card);
-            box-shadow: var(--shadow);
-            overflow: hidden;
-        }
-
-        .history-month-title {
-            font-size: 20px;
-            font-weight: 600;
-            padding: 10px 20px;
-            background-color: var(--ios-gray-light);
-            border-bottom: 1px solid var(--ios-gray-light);
-        }
-
-        .history-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 20px;
-            border-bottom: 1px solid var(--ios-gray-light);
-        }
-        .history-row:last-child {
-             border-bottom: none;
-        }
-
-        .history-status {
-            font-size: 22px;
-            font-weight: bold;
-        }
-        .status-ok { color: var(--ios-green); }
-        .status-bad { color: var(--ios-red); }
-
     </style>
 </head>
-<body>
+<body class="h-screen flex flex-col overflow-hidden text-gray-900 bg-blue-50">
 
-    <header>
-        <div class="header-left">
-            <h1 id="monthTitle">Mantenciones</h1>
-            <div class="subtitle">Registro semanal de limpieza</div>
+    <!-- Header -->
+    <header class="px-6 pt-4 pb-2 flex justify-between items-center z-10">
+        <div>
+            <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">REGISTRO DE PISCINA</h2>
+            <!-- Clase 'capitalize' eliminada para permitir minúsculas controladas por JS -->
+            <h1 class="text-3xl font-bold tracking-tight text-gray-900" id="appTitle">Cargando...</h1>
         </div>
-        <div class="header-buttons">
-            <button class="action-button" onclick="openHistoryModal()">
-                
-                <svg viewBox="0 0 24 24" stroke="currentColor">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                </svg>
-            </button>
-            <button class="action-button" onclick="shareImage()">
-                <svg viewBox="0 0 24 24" stroke="currentColor">
-                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
-                    <polyline points="16 6 12 2 8 6"></polyline>
-                    <line x1="12" y1="2" x2="12" y2="15"></line>
-                </svg>
-            </button>
-        </div>
+        <button onclick="shareMonth()" class="ios-btn bg-white w-10 h-10 flex items-center justify-center rounded-full shadow-sm text-blue-500">
+            <i class="ph ph-export text-xl"></i>
+        </button>
     </header>
 
-    <main>
-        <div class="card" id="weeksList">
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-y-auto px-5 pb-24 pt-2 scroll-smooth" id="mainContainer">
+        
+        <!-- Vista: Mes Actual -->
+        <div id="currentView" class="animate-enter block">
+            <div id="captureArea" class="space-y-4">
+                <!-- Se elimina el encabezado duplicado. Solo se deja el badge "Actual" -->
+                <div class="flex items-center justify-end mb-2">
+                    <span class="text-xs font-medium bg-blue-100 text-blue-600 px-3 py-1 rounded-full">Actual</span>
+                </div>
+                
+                <!-- Lista de Semanas -->
+                <div id="weeksList" class="space-y-3">
+                    <!-- Las semanas se generan con JS aquí -->
+                </div>
             </div>
+            
+            <div class="mt-8 text-center text-gray-400 text-sm">
+                <p>Toca el círculo para cambiar el estado</p>
+                <div class="flex justify-center gap-4 mt-2">
+                    <span class="flex items-center gap-1"><div class="w-3 h-3 rounded-full border border-gray-300"></div> Pendiente</span>
+                    <span class="flex items-center gap-1"><div class="w-3 h-3 rounded-full bg-green-500"></div> Hecho</span>
+                    <span class="flex items-center gap-1"><div class="w-3 h-3 rounded-full bg-red-500"></div> No Hecho</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vista: Historial -->
+        <div id="historyView" class="hidden animate-enter">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">Historial Completo</h3>
+            <div id="historyList" class="space-y-6">
+                <!-- Historial generado por JS -->
+            </div>
+            <div id="emptyHistory" class="hidden flex-col items-center justify-center py-10 text-gray-400">
+                <i class="ph ph-clock-counter-clockwise text-4xl mb-2"></i>
+                <p>No hay registros anteriores.</p>
+            </div>
+        </div>
+
     </main>
 
-    <div class="modal-overlay" id="historyModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Historial</h2>
-                <button class="modal-close-btn" onclick="closeHistoryModal()">Cerrar</button>
+    <!-- Bottom Navigation Bar (iOS Tab Bar style) -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-gray-200 pb-[env(safe-area-inset-bottom)] pt-2 px-6 z-50">
+        <div class="flex justify-around items-center h-16">
+            <button onclick="switchTab('current')" id="btnTabCurrent" class="flex flex-col items-center gap-1 w-full tab-active transition-colors">
+                <i class="ph ph-calendar-check text-2xl"></i>
+                <span class="text-[10px] font-medium">Este Mes</span>
+            </button>
+            <button onclick="switchTab('history')" id="btnTabHistory" class="flex flex-col items-center gap-1 w-full tab-inactive transition-colors">
+                <i class="ph ph-clock-counter-clockwise text-2xl"></i>
+                <span class="text-[10px] font-medium">Historial</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Modal de "Imagen Generada" -->
+    <div id="shareModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-6 opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-3xl p-4 w-full max-w-sm shadow-2xl transform scale-95 transition-transform duration-300" id="shareModalContent">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-gray-900">Resumen del Mes</h3>
+                <button onclick="closeShareModal()" class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-600">
+                    <i class="ph ph-x"></i>
+                </button>
             </div>
-            <div class="modal-body" id="historyBody">
-                </div>
+            <div class="bg-gray-100 rounded-xl overflow-hidden border border-gray-200 mb-4 flex items-center justify-center min-h-[200px]">
+                <img id="generatedImage" class="w-full h-auto object-contain" alt="Resumen de mantenciones">
+            </div>
+            <p class="text-center text-sm text-gray-500 mb-4">Mantén presionada la imagen para guardarla o compartirla.</p>
+            <button onclick="closeShareModal()" class="w-full bg-blue-600 text-white font-semibold py-3 rounded-2xl active:scale-95 transition-transform">
+                Listo
+            </button>
         </div>
     </div>
 
     <script>
-        const monthNames = [
-            "enero", "febrero", "marzo", "abril", "mayo", "junio",
-            "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
-        ];
+        // --- LOGICA DE DATOS Y FECHAS ---
 
-        // --- FUNCIONES PRINCIPALES ---
+        const STORAGE_KEY = 'pool_maintenance_v1';
+        let maintenanceData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
 
-        document.addEventListener('DOMContentLoaded', initApp);
+        // Configuración regional
+        const monthsEs = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
-        function initApp() {
-            const now = new Date();
-            const year = now.getFullYear();
-            const month = now.getMonth(); 
-
-            // Actualizar Título del mes actual
-            document.getElementById('monthTitle').textContent = `Mantenciones ${monthNames[month]}`;
-
-            generateWeeks(year, month);
+        function saveData() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(maintenanceData));
+            renderHistory(); // Actualizar historial en tiempo real si cambia algo
         }
 
-        function generateWeeks(year, month) {
-            const container = document.getElementById('weeksList');
-            container.innerHTML = ''; 
-
-            const mondays = getMondays(year, month);
-
-            mondays.forEach(date => {
-                const dayNum = date.getDate();
-                const storageKey = `pool_${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
-                
-                const savedState = localStorage.getItem(storageKey);
-
-                const row = document.createElement('div');
-                row.className = 'week-row';
-                
-                row.innerHTML = `
-                    <div class="week-info">
-                        <span class="week-title">Semana del ${dayNum}</span>
-                        <span class="week-dates">${getRangeText(date)}</span>
-                    </div>
-                    <div class="action-group">
-                        <button class="btn-action ${savedState === 'ok' ? 'active-check' : 'inactive'}" onclick="setStatus('${storageKey}', 'ok', this)">
-                            <svg stroke="currentColor" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        </button>
-                        <button class="btn-action ${savedState === 'bad' ? 'active-cross' : 'inactive'}" onclick="setStatus('${storageKey}', 'bad', this)">
-                            <svg stroke="currentColor" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                        </button>
-                    </div>
-                `;
-                container.appendChild(row);
-            });
-        }
-
-        // --- FUNCIONES DE UTILIDAD DE FECHAS ---
-
-        function getMondays(year, month) {
-            let d = new Date(year, month, 1);
+        // Obtener todos los lunes de un mes específico
+        function getMondaysOfMonth(year, monthIndex) {
+            let d = new Date(year, monthIndex, 1);
             let mondays = [];
+            
+            // Buscar el primer lunes
+            // getDay(): 0=Dom, 1=Lun, ...
             while (d.getDay() !== 1) {
                 d.setDate(d.getDate() + 1);
             }
-            while (d.getMonth() === month) {
-                mondays.push(new Date(d.getTime()));
+
+            // Mientras sigamos en el mismo mes
+            while (d.getMonth() === monthIndex) {
+                // Formato ISO simple YYYY-MM-DD para usar como ID
+                const dateStr = d.toISOString().split('T')[0];
+                const dayNum = d.getDate();
+                mondays.push({ dateStr, dayNum, fullDate: new Date(d) });
                 d.setDate(d.getDate() + 7);
             }
             return mondays;
         }
 
-        function getRangeText(mondayDate) {
-            const sunday = new Date(mondayDate);
-            sunday.setDate(mondayDate.getDate() + 6);
-            return `${mondayDate.getDate()} - ${sunday.getDate()} ${monthNames[sunday.getMonth()].substring(0,3)}`;
+        // Obtener estado actual (0: null, 1: check, 2: cross)
+        function getStatus(dateStr) {
+            return maintenanceData[dateStr] || 0;
         }
 
-        // --- FUNCIÓN DE ALMACENAMIENTO Y ESTADO ---
-
-        window.setStatus = function(key, status, btnElement) {
-            const parent = btnElement.parentElement;
-            const checkBtn = parent.children[0];
-            const crossBtn = parent.children[1];
+        // Cambiar estado cíclicamente
+        function toggleStatus(dateStr) {
+            let current = getStatus(dateStr);
+            let next = (current + 1) % 3; // 0 -> 1 -> 2 -> 0
             
-            const currentState = localStorage.getItem(key);
-
-            if (currentState === status) {
-                localStorage.removeItem(key);
-                checkBtn.className = 'btn-action inactive';
-                crossBtn.className = 'btn-action inactive';
+            if (next === 0) {
+                delete maintenanceData[dateStr];
             } else {
-                localStorage.setItem(key, status);
-                
-                if (status === 'ok') {
-                    checkBtn.className = 'btn-action active-check';
-                    crossBtn.className = 'btn-action inactive';
-                } else {
-                    checkBtn.className = 'btn-action inactive';
-                    crossBtn.className = 'btn-action active-cross';
-                }
+                maintenanceData[dateStr] = next;
             }
-        };
+            saveData();
+            renderWeeks();
+        }
 
-        // --- FUNCIONES DE HISTORIAL (NUEVAS) ---
+        // --- RENDERIZADO UI ---
 
-        window.openHistoryModal = function() {
-            loadHistory();
-            document.getElementById('historyModal').classList.add('open');
-        };
+        function renderWeeks() {
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const currentMonth = now.getMonth(); // 0-11
 
-        window.closeHistoryModal = function() {
-            document.getElementById('historyModal').classList.remove('open');
-        };
-
-        function loadHistory() {
-            const historyData = {};
-            const keys = Object.keys(localStorage).filter(key => key.startsWith('pool_'));
+            // Título principal: "Mantenciones" con M mayúscula + mes en minúsculas + año
+            document.getElementById('appTitle').textContent = `Mantenciones ${monthsEs[currentMonth].toLowerCase()} ${currentYear}`;
             
-            // 1. Agrupar datos por Año y Mes
-            keys.forEach(key => {
-                const parts = key.split('_')[1].split('-'); // Ejemplo: ["2025", "12", "01"]
-                const year = parts[0];
-                const monthIndex = parseInt(parts[1]) - 1; // 0-11
-                const dateKey = parts[2];
+            const weeks = getMondaysOfMonth(currentYear, currentMonth);
+            const container = document.getElementById('weeksList');
+            container.innerHTML = '';
 
-                const monthYearKey = `${monthNames[monthIndex].charAt(0).toUpperCase() + monthNames[monthIndex].slice(1)} ${year}`;
+            weeks.forEach(week => {
+                const status = getStatus(week.dateStr);
                 
-                if (!historyData[monthYearKey]) {
-                    historyData[monthYearKey] = [];
+                // Determinar clases visuales según estado
+                let btnClass = '';
+                let iconHtml = '';
+                
+                if (status === 1) {
+                    btnClass = 'checked';
+                    iconHtml = '<i class="ph ph-check font-bold"></i>';
+                } else if (status === 2) {
+                    btnClass = 'crossed';
+                    iconHtml = '<i class="ph ph-x font-bold"></i>';
                 }
 
-                historyData[monthYearKey].push({
-                    date: new Date(year, monthIndex, parseInt(dateKey)),
-                    status: localStorage.getItem(key),
-                    key: key
-                });
+                // Crear elemento HTML
+                const weekEl = document.createElement('div');
+                weekEl.className = 'ios-card p-4 flex justify-between items-center';
+                weekEl.innerHTML = `
+                    <div class="flex flex-col">
+                        <span class="text-gray-900 font-semibold text-lg">Semana del ${week.dayNum}</span>
+                        <span class="text-gray-400 text-xs mt-0.5 font-medium">${monthsEs[currentMonth]} ${currentYear}</span>
+                    </div>
+                    <button onclick="toggleStatus('${week.dateStr}')" class="status-btn ${btnClass} shadow-sm active:scale-90">
+                        ${iconHtml}
+                    </button>
+                `;
+                container.appendChild(weekEl);
+            });
+        }
+
+        function renderHistory() {
+            const container = document.getElementById('historyList');
+            container.innerHTML = '';
+            
+            const now = new Date();
+            const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+            // Agrupar datos por Mes
+            const groups = {};
+            const keys = Object.keys(maintenanceData).sort().reverse(); // Ordenar fechas descendente
+
+            if (keys.length === 0) {
+                document.getElementById('emptyHistory').classList.remove('hidden');
+                document.getElementById('emptyHistory').classList.add('flex');
+                return;
+            } else {
+                document.getElementById('emptyHistory').classList.add('hidden');
+                document.getElementById('emptyHistory').classList.remove('flex');
+            }
+
+            keys.forEach(dateStr => {
+                // FIX: Usar componentes de fecha y Date.UTC para evitar el problema de la zona horaria 
+                // que cambia el día/mes al crear el objeto Date.
+                const [year, month, day] = dateStr.split('-').map(Number);
+                const dateUTC = new Date(Date.UTC(year, month - 1, day)); // month - 1 porque es 0-indexed
+
+                if(isNaN(dateUTC.getTime())) return; // Usar getTime() para una verificación de fecha más robusta.
+
+                // Usar métodos UTC para extraer de forma fiable el año y el mes de la cadena
+                const monthKey = `${dateUTC.getUTCFullYear()}-${String(dateUTC.getUTCMonth() + 1).padStart(2, '0')}`;
+                
+                // Opcional: Ocultar el mes actual del historial si se desea
+                // if (monthKey === currentMonthStr) return; 
+
+                if (!groups[monthKey]) {
+                    groups[monthKey] = {
+                        year: dateUTC.getUTCFullYear(),
+                        monthIndex: dateUTC.getUTCMonth(),
+                        items: []
+                    };
+                }
+                groups[monthKey].items.push({ dateStr, status: maintenanceData[dateStr] });
             });
 
-            // 2. Ordenar Meses (de más reciente a más antiguo)
-            const sortedMonthKeys = Object.keys(historyData).sort((a, b) => {
-                const [monthA, yearA] = a.split(' ');
-                const [monthB, yearB] = b.split(' ');
+            // Renderizar Grupos
+            Object.values(groups).forEach(group => {
+                const groupEl = document.createElement('div');
                 
-                // Mapear nombre del mes a número para la comparación
-                const monthNumA = monthNames.indexOf(monthA.toLowerCase());
-                const monthNumB = monthNames.indexOf(monthB.toLowerCase());
+                let itemsHtml = '';
+                // Ordenar items dentro del mes (descendente)
+                group.items.sort((a, b) => new Date(b.dateStr) - new Date(a.dateStr));
 
-                if (parseInt(yearB) !== parseInt(yearA)) return parseInt(yearB) - parseInt(yearA);
-                return monthNumB - monthNumA;
-            });
-            
-            const historyBody = document.getElementById('historyBody');
-            historyBody.innerHTML = '';
-            
-            // 3. Renderizar el HTML
-            sortedMonthKeys.forEach(monthYearKey => {
-                const monthData = historyData[monthYearKey];
-                
-                // Ordenar semanas dentro del mes (de lunes más temprano al más tardío)
-                monthData.sort((a, b) => a.date - b.date);
-
-                const group = document.createElement('div');
-                group.className = 'history-month-group';
-
-                let groupHTML = `<div class="history-month-title">${monthYearKey}</div>`;
-                
-                monthData.forEach(item => {
+                group.items.forEach(item => {
+                    // Ajuste preciso de día para visualización (split evita problemas de timezone UTC)
+                    const dayDisplay = item.dateStr.split('-')[2]; 
+                    
+                    let statusIcon = '';
                     let statusText = '';
-                    let statusClass = '';
+                    let statusColor = '';
 
-                    if (item.status === 'ok') {
-                        statusText = '✅';
-                        statusClass = 'status-ok';
-                    } else if (item.status === 'bad') {
-                        statusText = '❌';
-                        statusClass = 'status-bad';
+                    if (item.status === 1) {
+                        statusIcon = '<i class="ph ph-check-circle text-green-500 text-xl"></i>';
+                        statusText = 'Realizada';
+                        statusColor = 'text-green-600 bg-green-50';
                     } else {
-                        // Las semanas sin estado guardado no deberían aparecer en el historial, 
-                        // pero por si acaso, las marcamos como Pendientes.
-                        statusText = '...';
-                        statusClass = '';
+                        statusIcon = '<i class="ph ph-x-circle text-red-500 text-xl"></i>';
+                        statusText = 'No realizada';
+                        statusColor = 'text-red-600 bg-red-50';
                     }
 
-                    const mondayNum = item.date.getDate();
-                    const weekRange = getRangeText(item.date);
-
-                    groupHTML += `
-                        <div class="history-row">
-                            <span>Semana del ${mondayNum} (${weekRange})</span>
-                            <span class="history-status ${statusClass}">${statusText}</span>
+                    itemsHtml += `
+                        <div class="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+                            <span class="text-gray-700 font-medium">Semana del ${parseInt(dayDisplay)}</span>
+                            <div class="flex items-center gap-2 ${statusColor} px-2 py-1 rounded-lg text-xs font-bold uppercase tracking-wider">
+                                ${statusText}
+                                ${statusIcon}
+                            </div>
                         </div>
                     `;
                 });
 
-                group.innerHTML = groupHTML;
-                historyBody.appendChild(group);
+                groupEl.innerHTML = `
+                    <div class="bg-white rounded-2xl shadow-sm p-5 border border-gray-100">
+                        <h4 class="text-lg font-bold text-gray-800 mb-3 border-b border-gray-100 pb-2 capitalize">
+                            ${monthsEs[group.monthIndex]} ${group.year}
+                        </h4>
+                        <div>${itemsHtml}</div>
+                    </div>
+                `;
+                container.appendChild(groupEl);
             });
+        }
 
-            if (keys.length === 0) {
-                 historyBody.innerHTML = '<p style="text-align: center; color: var(--ios-subtext); margin-top: 30px;">Aún no hay registros guardados. ¡Empieza a registrar las mantenciones!</p>';
+        // --- NAVEGACIÓN ---
+
+        function switchTab(tab) {
+            const currentView = document.getElementById('currentView');
+            const historyView = document.getElementById('historyView');
+            const btnCurrent = document.getElementById('btnTabCurrent');
+            const btnHistory = document.getElementById('btnTabHistory');
+
+            if (tab === 'current') {
+                currentView.classList.remove('hidden');
+                historyView.classList.add('hidden');
+                
+                btnCurrent.classList.add('tab-active');
+                btnCurrent.classList.remove('tab-inactive');
+                btnHistory.classList.remove('tab-active');
+                btnHistory.classList.add('tab-inactive');
+                
+                // Reset scroll
+                document.getElementById('mainContainer').scrollTop = 0;
+            } else {
+                renderHistory();
+                currentView.classList.add('hidden');
+                historyView.classList.remove('hidden');
+
+                btnCurrent.classList.remove('tab-active');
+                btnCurrent.classList.add('tab-inactive');
+                btnHistory.classList.add('tab-active');
+                btnHistory.classList.remove('tab-inactive');
             }
         }
 
+        // --- COMPARTIR / CAPTURA ---
 
-        // --- FUNCIÓN DE COMPARTIR IMAGEN --- (Se mantiene de la respuesta anterior)
+        async function shareMonth() {
+            // Asegurar que estamos en la vista correcta
+            switchTab('current');
 
-        window.shareImage = async function() {
-            const weeksListElement = document.getElementById('weeksList');
-            const currentMonthTitle = document.getElementById('monthTitle').textContent;
-
-            const actionGroups = weeksListElement.querySelectorAll('.action-group');
-            actionGroups.forEach(group => group.style.visibility = 'hidden');
-
+            const element = document.getElementById('captureArea');
+            
+            // Estilizar para la captura
+            const originalStyle = element.getAttribute('style');
+            element.classList.add('capturing');
+            
             try {
-                const canvas = await html2canvas(weeksListElement, {
-                    scale: window.devicePixelRatio, 
-                    useCORS: true, 
-                    backgroundColor: weeksListElement.style.backgroundColor || getComputedStyle(weeksListElement).backgroundColor,
-                    windowHeight: weeksListElement.scrollHeight,
-                    height: weeksListElement.scrollHeight
+                const canvas = await html2canvas(element, {
+                    scale: 3, // Alta resolución
+                    backgroundColor: '#ffffff',
+                    logging: false,
+                    useCORS: true
                 });
 
-                actionGroups.forEach(group => group.style.visibility = 'visible');
+                const imgData = canvas.toDataURL('image/png');
+                
+                // Mostrar Modal
+                document.getElementById('generatedImage').src = imgData;
+                const modal = document.getElementById('shareModal');
+                const content = document.getElementById('shareModalContent');
+                
+                modal.classList.remove('hidden');
+                // Forzar reflow
+                void modal.offsetWidth;
+                modal.classList.remove('opacity-0');
+                content.classList.remove('scale-95');
 
-                const imageBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
-                const fileName = `${currentMonthTitle.replace(/[^a-z0-9]/gi, '_')}.png`;
-
-                if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([imageBlob], fileName, { type: 'image/png' })] })) {
-                    await navigator.share({
-                        files: [new File([imageBlob], fileName, { type: 'image/png' })],
-                        title: currentMonthTitle,
-                        text: `Resumen de Mantenciones de Piscina para ${currentMonthTitle}`
-                    });
-                } else {
-                    const imgUrl = URL.createObjectURL(imageBlob);
-                    const link = document.createElement('a');
-                    link.href = imgUrl;
-                    link.download = fileName;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    URL.revokeObjectURL(imgUrl);
-                    alert('La imagen se ha descargado.');
-                }
-            } catch (error) {
-                console.error('Error al generar o compartir la imagen:', error);
-                actionGroups.forEach(group => group.style.visibility = 'visible');
-                alert('No se pudo generar la imagen. Inténtalo de nuevo.');
+            } catch (err) {
+                console.error("Error al capturar", err);
+                // No modificaremos el appTitle, solo se registra el error.
+            } finally {
+                // Restaurar estilos
+                element.classList.remove('capturing');
             }
-        };
+        }
+
+        function closeShareModal() {
+            const modal = document.getElementById('shareModal');
+            const content = document.getElementById('shareModalContent');
+            
+            modal.classList.add('opacity-0');
+            content.classList.add('scale-95');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        // --- INICIALIZACIÓN ---
+        document.addEventListener('DOMContentLoaded', () => {
+            renderWeeks();
+        });
+
     </script>
 </body>
 </html>
